@@ -218,6 +218,7 @@ function Scene({ model, animations, lightProperties, sceneProperties }) {
   useEffect(() => {
     if (model) {
       scene.add(model);
+      console.log("Model added")
       if (animations && animations.length > 0) {
         mixer.current = new AnimationMixer(model);
         animations.forEach((clip) => {
@@ -305,9 +306,8 @@ function Scene({ model, animations, lightProperties, sceneProperties }) {
       model.traverse((child) => {
         if (child.isMesh) {
           child.material.wireframe = sceneProperties.wireframe;
-  
           // Apply textures to all meshes whose names start with "Hull" except for "Hull_3"
-          if (child.name.startsWith('Hull')) {
+          if ((child.name.startsWith('Hull_3')) || (child.name.startsWith('Cube'))){  //changed by Geetha
             applyTextures(child);
           }
         }
@@ -319,30 +319,45 @@ function Scene({ model, animations, lightProperties, sceneProperties }) {
   const applyTextures = (mesh) => {
     const textureLoader = new TextureLoader();
   
+    //Code changed by geetha - Apply standard material for entire ship
     if (!(mesh.material instanceof MeshStandardMaterial)) {
-      mesh.material = new MeshStandardMaterial({
+        mesh.material = new MeshStandardMaterial({
         color: mesh.material.color,
         wireframe: mesh.material.wireframe,
       });
     }
+    //Change texture only for Hull_3 - geetha
+    if ((mesh.name.startsWith('Hull_3')) || (mesh.name.startsWith('Cube'))) {
+      mesh.material = new MeshStandardMaterial({
+        map: new THREE.TextureLoader().load('src/img/blueHull.jpg')  //changed the image to simple blue hull since the wall picture was not great
+      });
+      console.log("Mesh material texture set")
+    }
   
-    textureLoader.load('src/img/b1bump.jpeg', (bumpMap) => {
+    //Using a normalmap instead of bumpmap - geetha. Bump parameters changed to normal. 
+    //used site https://cpetry.github.io/NormalMap-Online/ to generate the normal map and displacement map for blueHull.jpg
+    textureLoader.load('src/img/NormalMap.png', (normalMap) => {  
       if (mesh.material instanceof MeshStandardMaterial) {
-        mesh.material.bumpMap = bumpMap;
-        bumpMap.encoding = THREE.LinearEncoding; 
-        mesh.material.bumpScale = 800; // Adjust this value as needed
-        mesh.material.needsUpdate = true;
-        console.log('Bump map applied with scale:', mesh.material.bumpScale);
+        if ((mesh.name.startsWith('Hull_3')) || (mesh.name.startsWith('Cube'))) { //added - geetha
+          normalMap.encoding = THREE.LinearEncoding; 
+          mesh.material.normalMap = normalMap;
+          mesh.material.normalScale = 1; // Adjust this value as needed. Values between 0 and 1
+          mesh.material.needsUpdate = true;
+          console.log('Bump map applied with scale:', mesh.material.normalScale);
+        } //added - geetha 
       }
     });
   
-    textureLoader.load('src/img/displacement_bump.jpeg', (displacementMap) => {
+    //trying displacement as well - geetha 
+    textureLoader.load('src/img/DisplacementMap.png', (displacementMap) => {
       if (mesh.material instanceof MeshStandardMaterial) {
-        mesh.material.displacementMap = displacementMap;
-        displacementMap.encoding = THREE.LinearEncoding; 
-        mesh.material.displacementScale = 0; // Adjust this value as needed
-        mesh.material.needsUpdate = true;
-        console.log('Displacement map applied with scale:', mesh.material.displacementScale);
+        if ((mesh.name.startsWith('Hull_3')) || (mesh.name.startsWith('Cube'))) { //added - geetha
+          displacementMap.encoding = THREE.LinearEncoding;
+          mesh.material.displacementMap = displacementMap;
+          mesh.material.displacementScale = 0.01; // Adjust this value as needed
+          mesh.material.needsUpdate = true;
+          console.log('Displacement map applied with scale:', mesh.material.displacementScale);
+        } //added - geetha
       }
     });
   };
